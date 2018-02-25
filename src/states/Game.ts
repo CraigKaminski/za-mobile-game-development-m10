@@ -25,6 +25,7 @@ export class Game extends Phaser.State {
   private blocks: Phaser.Group;
   private blocksCollisionGroup: Phaser.Physics.P2.CollisionGroup;
   private chicken: Phaser.Sprite;
+  private chickenHUD: Phaser.Group;
   private chickensCollisionGroup: Phaser.Physics.P2.CollisionGroup;
   private countDeadEnemies: number;
   private currentLevel: string;
@@ -50,6 +51,8 @@ export class Game extends Phaser.State {
   public create() {
     const sky = this.add.tileSprite(0, 0, this.world.width, this.world.height, 'sky');
     this.game.world.sendToBack(sky);
+
+    this.chickenHUD = this.add.group();
 
     this.blocks = this.add.group();
     this.blocks.enableBody = true;
@@ -168,11 +171,21 @@ export class Game extends Phaser.State {
     }
   }
 
+  private refreshStats() {
+    this.chickenHUD.removeAll();
+
+    for (let i = 0; i < this.numChickens; i++) {
+      this.chickenHUD.create(this.game.width - 100 - i * 80, 30, 'chicken');
+    }
+  }
+
   private setupChicken() {
     this.chicken = this.add.sprite(this.pole.x, this.pole.y, 'chicken');
     this.chicken.anchor.setTo(0.5);
 
     this.isChickenReady = true;
+
+    this.refreshStats();
   }
 
   private throwChicken() {
