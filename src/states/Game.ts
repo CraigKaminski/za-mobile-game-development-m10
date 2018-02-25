@@ -26,13 +26,16 @@ export class Game extends Phaser.State {
   private blocksCollisionGroup: Phaser.Physics.P2.CollisionGroup;
   private chicken: Phaser.Sprite;
   private chickensCollisionGroup: Phaser.Physics.P2.CollisionGroup;
+  private countDeadEnemies: number;
   private currentLevel: string;
   private enemies: Phaser.Group;
   private enemiesCollisionGroup: Phaser.Physics.P2.CollisionGroup;
   private floor: Phaser.TileSprite;
   private isChickenReady = false;
   private isPreparingShot = false;
+  private numChickens: number;
   private pole: Phaser.Sprite;
+  private totalNumEnemies: number;
 
   public init(currentLevel: string) {
     this.currentLevel = currentLevel ? currentLevel : 'level1';
@@ -110,6 +113,22 @@ export class Game extends Phaser.State {
     enemy.body.onBeginContact.add(this.hitEnemy.bind(this, enemy));
   }
 
+  private endTurn() {
+    this.numChickens--;
+
+    this.time.events.add(3 * Phaser.Timer.SECOND, () => {
+      this.chicken.kill();
+
+      this.time.events.add(Phaser.Timer.SECOND, () => {
+        if (this.numChickens > 0) {
+          this.setupChicken();
+        } else {
+          this.gameOver();
+        }
+      }, this);
+    }, this);
+  }
+
   private gameOver() {
     this.state.start('Game', true, false, this.currentLevel);
   }
@@ -122,6 +141,7 @@ export class Game extends Phaser.State {
 
     if (velocityDiff > KILL_DIFF) {
       enemy.kill();
+      this.updateDeadCount();
     }
   }
 
@@ -135,6 +155,10 @@ export class Game extends Phaser.State {
     levelData.enemies.forEach((enemy: IEnemyData) => {
       this.createEnemy(enemy);
     });
+
+    this.countDeadEnemies = 0;
+    this.totalNumEnemies = levelData.enemies.length;
+    this.numChickens = 3;
   }
 
   private prepareShot(event: Phaser.Events) {
@@ -160,5 +184,16 @@ export class Game extends Phaser.State {
       Math.min(Math.abs(diff.x * SHOOT_FACTOR), MAX_SPEED_SHOOT);
     this.chicken.body.velocity.y = (Math.abs(diff.y) / diff.y) *
       Math.min(Math.abs(diff.y * SHOOT_FACTOR), MAX_SPEED_SHOOT);
+
+    this.endTurn();
+  }
+
+  private updateDeadCount() {
+    this.countDeadEnemies++;
+
+    if (this.countDeadEnemies === this.totalNumEnemies) {
+      console.log('You Won!!!');
+      this.gameOver();
+    }
   }
 }
