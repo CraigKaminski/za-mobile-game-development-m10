@@ -156,7 +156,9 @@ export class Game extends Phaser.State {
     this.chicken.body.setCollisionGroup(this.chickensCollisionGroup);
     this.chicken.body.collides([this.blocksCollisionGroup, this.enemiesCollisionGroup, this.chickensCollisionGroup]);
     const diff = Phaser.Point.subtract(this.pole.position, this.chicken.position);
-    this.chicken.body.velocity.x = diff.x * SHOOT_FACTOR;
-    this.chicken.body.velocity.y = diff.y * SHOOT_FACTOR;
+    this.chicken.body.velocity.x = (Math.abs(diff.x) / diff.x) *
+      Math.min(Math.abs(diff.x * SHOOT_FACTOR), MAX_SPEED_SHOOT);
+    this.chicken.body.velocity.y = (Math.abs(diff.y) / diff.y) *
+      Math.min(Math.abs(diff.y * SHOOT_FACTOR), MAX_SPEED_SHOOT);
   }
 }
