@@ -1,23 +1,24 @@
+const KILL_DIFF = 25;
 const MAX_DISTANCE_SHOOT = 190;
 const MAX_SPEED_SHOOT = 1000;
 const SHOOT_FACTOR = 12;
 
-interface IBlock {
+interface IBlockData {
   asset: string;
   mass: number;
   x: number;
   y: number;
 }
 
-interface IEnemy {
+interface IEnemyData {
   asset: string;
   x: number;
   y: number;
 }
 
 interface ILevelData {
-  blocks: IBlock[];
-  enemies: IEnemy[];
+  blocks: IBlockData[];
+  enemies: IEnemyData[];
 }
 
 export class Game extends Phaser.State {
@@ -25,6 +26,7 @@ export class Game extends Phaser.State {
   private blocksCollisionGroup: Phaser.Physics.P2.CollisionGroup;
   private chickensCollisionGroup: Phaser.Physics.P2.CollisionGroup;
   private currentLevel: string;
+  private enemies: Phaser.Group;
   private enemiesCollisionGroup: Phaser.Physics.P2.CollisionGroup;
   private floor: Phaser.TileSprite;
 
@@ -46,6 +48,10 @@ export class Game extends Phaser.State {
     this.blocks.enableBody = true;
     this.blocks.physicsBodyType = Phaser.Physics.P2JS;
 
+    this.enemies = this.add.group();
+    this.enemies.enableBody = true;
+    this.enemies.physicsBodyType = Phaser.Physics.P2JS;
+
     const floor = this.add.tileSprite(this.world.width / 2, this.world.height - 24, this.world.width, 48, 'floor');
     this.blocks.add(floor);
     floor.body.setCollisionGroup(this.blocksCollisionGroup);
@@ -55,7 +61,7 @@ export class Game extends Phaser.State {
     this.loadLevel();
   }
 
-  private createBlock(data: IBlock) {
+  private createBlock(data: IBlockData) {
     const block = new Phaser.Sprite(this.game, data.x, data.y, data.asset);
     this.blocks.add(block);
     block.body.mass = data.mass;
@@ -63,15 +69,38 @@ export class Game extends Phaser.State {
     block.body.collides([this.blocksCollisionGroup, this.enemiesCollisionGroup, this.chickensCollisionGroup]);
   }
 
+  private createEnemy(data: IEnemyData) {
+    const enemy = new Phaser.Sprite(this.game, data.x, data.y, data.asset);
+    this.enemies.add(enemy);
+    enemy.body.setCollisionGroup(this.enemiesCollisionGroup);
+    enemy.body.collides([this.blocksCollisionGroup, this.enemiesCollisionGroup, this.chickensCollisionGroup]);
+    enemy.body.onBeginContact.add(this.hitEnemy.bind(this, enemy));
+  }
+
   private gameOver() {
     this.state.start('Game', true, false, this.currentLevel);
+  }
+
+  private hitEnemy(enemy: Phaser.Sprite, body: any, bodyB: any, shapeA: any, shapeB: any, equation: any) {
+    const velocityDiff = Phaser.Point.distance(
+      new Phaser.Point(equation[0].bodyA.velocity[0], equation[0].bodyA.velocity[1]),
+      new Phaser.Point(equation[0].bodyB.velocity[0], equation[0].bodyB.velocity[1]),
+    );
+
+    if (velocityDiff > KILL_DIFF) {
+      enemy.kill();
+    }
   }
 
   private loadLevel() {
     const levelData: ILevelData = JSON.parse(this.game.cache.getText(this.currentLevel));
 
-    levelData.blocks.forEach((block: IBlock) => {
+    levelData.blocks.forEach((block: IBlockData) => {
       this.createBlock(block);
+    });
+
+    levelData.enemies.forEach((enemy: IEnemyData) => {
+      this.createEnemy(enemy);
     });
   }
 }
