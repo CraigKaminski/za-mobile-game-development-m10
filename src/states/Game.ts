@@ -24,11 +24,14 @@ interface ILevelData {
 export class Game extends Phaser.State {
   private blocks: Phaser.Group;
   private blocksCollisionGroup: Phaser.Physics.P2.CollisionGroup;
+  private chicken: Phaser.Sprite;
   private chickensCollisionGroup: Phaser.Physics.P2.CollisionGroup;
   private currentLevel: string;
   private enemies: Phaser.Group;
   private enemiesCollisionGroup: Phaser.Physics.P2.CollisionGroup;
   private floor: Phaser.TileSprite;
+  private isChickenReady = false;
+  private pole: Phaser.Sprite;
 
   public init(currentLevel: string) {
     this.currentLevel = currentLevel ? currentLevel : 'level1';
@@ -59,6 +62,13 @@ export class Game extends Phaser.State {
     floor.body.static = true;
 
     this.loadLevel();
+
+    this.pole = this.add.sprite(180, 500, 'pole');
+    this.pole.anchor.setTo(0.5, 0);
+
+    this.input.onDown.add(this.prepareShot, this);
+
+    this.setupChicken();
   }
 
   private createBlock(data: IBlockData) {
@@ -102,5 +112,18 @@ export class Game extends Phaser.State {
     levelData.enemies.forEach((enemy: IEnemyData) => {
       this.createEnemy(enemy);
     });
+  }
+
+  private prepareShot(event: Phaser.Events) {
+    if (this.isChickenReady) {
+      console.log('preparing chicken');
+    }
+  }
+
+  private setupChicken() {
+    this.chicken = this.add.sprite(this.pole.x, this.pole.y, 'chicken');
+    this.chicken.anchor.setTo(0.5);
+
+    this.isChickenReady = true;
   }
 }
