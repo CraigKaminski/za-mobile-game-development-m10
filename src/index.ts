@@ -8,7 +8,7 @@ import { Boot } from './states/Boot';
 import { Game } from './states/Game';
 import { Preload } from './states/Preload';
 
-const game = new Phaser.Game(800, 600, Phaser.AUTO, '', null);
+const game = new Phaser.Game(1080, 640, Phaser.AUTO, '', null);
 
 game.state.add('Boot', Boot);
 game.state.add('Preload', Preload);
