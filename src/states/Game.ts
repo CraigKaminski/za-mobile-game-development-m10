@@ -31,6 +31,7 @@ export class Game extends Phaser.State {
   private enemiesCollisionGroup: Phaser.Physics.P2.CollisionGroup;
   private floor: Phaser.TileSprite;
   private isChickenReady = false;
+  private isPreparingShot = false;
   private pole: Phaser.Sprite;
 
   public init(currentLevel: string) {
@@ -69,6 +70,28 @@ export class Game extends Phaser.State {
     this.input.onDown.add(this.prepareShot, this);
 
     this.setupChicken();
+  }
+
+  public update() {
+    if (this.isPreparingShot) {
+      this.chicken.x = this.input.activePointer.x;
+      this.chicken.y = this.input.activePointer.y;
+
+      const distance = Phaser.Point.distance(this.chicken.position, this.pole.position);
+
+      if (distance > MAX_DISTANCE_SHOOT) {
+        this.isChickenReady = true;
+        this.isPreparingShot = false;
+
+        this.chicken.x = this.pole.x;
+        this.chicken.y = this.pole.y;
+      }
+
+      if (this.input.activePointer.isUp) {
+        this.isPreparingShot = false;
+        this.throwChicken();
+      }
+    }
   }
 
   private createBlock(data: IBlockData) {
@@ -116,7 +139,8 @@ export class Game extends Phaser.State {
 
   private prepareShot(event: Phaser.Events) {
     if (this.isChickenReady) {
-      console.log('preparing chicken');
+      this.isChickenReady = false;
+      this.isPreparingShot = true;
     }
   }
 
@@ -125,5 +149,14 @@ export class Game extends Phaser.State {
     this.chicken.anchor.setTo(0.5);
 
     this.isChickenReady = true;
+  }
+
+  private throwChicken() {
+    this.physics.p2.enable(this.chicken);
+    this.chicken.body.setCollisionGroup(this.chickensCollisionGroup);
+    this.chicken.body.collides([this.blocksCollisionGroup, this.enemiesCollisionGroup, this.chickensCollisionGroup]);
+    const diff = Phaser.Point.subtract(this.pole.position, this.chicken.position);
+    this.chicken.body.velocity.x = diff.x * SHOOT_FACTOR;
+    this.chicken.body.velocity.y = diff.y * SHOOT_FACTOR;
   }
 }
